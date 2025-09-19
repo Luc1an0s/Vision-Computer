@@ -1,33 +1,48 @@
-import face_recognition
 import cv2
+import face_recognition
+import numpy as np
 
-# Carrega imagem de referência
-known_image = face_recognition.load_image_file("luciano.jpg")
-known_encoding = face_recognition.face_encodings(known_image)[0]
+# Inicia a webcam
+video_capture = cv2.VideoCapture(0)
 
-# Inicia webcam
-video = cv2.VideoCapture(0)
+if not video_capture.isOpened():
+    print("Erro: Webcam não foi aberta.")
+    exit()
+
+cv2.namedWindow("Linhas do Rosto - Webcam", cv2.WINDOW_NORMAL)
 
 while True:
-    ret, frame = video.read()
-    rgb_frame = frame[:, :, ::-1]
+    ret, frame = video_capture.read()
+    if not ret or frame is None:
+        print("Erro ao capturar frame.")
+        continue
 
-    # Detecta rostos
-    face_locations = face_recognition.face_locations(rgb_frame)
-    face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+    # Converte para RGB corretamente
+    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    rgb_frame = np.ascontiguousarray(rgb_frame, dtype=np.uint8)
 
-    for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
-        match = face_recognition.compare_faces([known_encoding], face_encoding)[0]
-        label = "Luciano" if match else "Desconhecido"
+    try:
+        # Detecta landmarks faciais
+        face_landmarks_list = face_recognition.face_landmarks(rgb_frame)
+    except Exception as e:
+        print("Erro ao detectar rosto:", e)
+        continue
 
-        # Desenha retângulo e nome
-        cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
-        cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2)
+    # Desenha as linhas faciais
+    for face_landmarks in face_landmarks_list:
+        for feature, points in face_landmarks.items():
+            for i in range(len(points) - 1):
+                pt1 = points[i]
+                pt2 = points[i + 1]
+                cv2.line(frame, pt1, pt2, (0, 255, 0), 2)
 
-    cv2.imshow("Reconhecimento Facial", frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    # Exibe o vídeo com linhas desenhadas
+    cv2.imshow("Linhas do Rosto - Webcam", frame)
+
+    # Pressione 'q' para sair
+    if cv2.waitKey(10) & 0xFF == ord("q"):
+        print("Encerrando...")
         break
 
-video.release()
+video_capture.release()
 cv2.destroyAllWindows()
-

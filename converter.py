@@ -1,10 +1,7 @@
 from PIL import Image
-import numpy as np
 
-# Carrega e converte para RGB
-pil_image = Image.open("luciano.jpg").convert("RGB")
-known_image = np.array(pil_image)
+# Abre e converte para RGB puro
+img = Image.open("luciano.jpg").convert("RGB")
 
-# Garante que é RGB 8-bit
-print("Shape:", known_image.shape)
-print("Dtype:", known_image.dtype)
+# Salva como nova imagem limpa
+img.save("luciano_clean.jpg", format="JPEG")
